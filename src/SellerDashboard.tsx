@@ -12,6 +12,7 @@ export default function SellerDashboard() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
@@ -21,6 +22,16 @@ export default function SellerDashboard() {
 
     return () => unsubscribeAuth();
   }, []);
+
+  const handleLogin = async () => {
+    setLoginError(null);
+    try {
+      await loginWithGoogle();
+    } catch (error: any) {
+      console.error("Login Error:", error);
+      setLoginError(error.message || "Gagal masuk. Pastikan domain sudah terdaftar di Firebase.");
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -101,8 +112,15 @@ export default function SellerDashboard() {
           </div>
           <h1 className="text-3xl font-extrabold mb-3">Akses Terbatas</h1>
           <p className="text-text-light mb-8 font-medium">Khusus untuk pemilik Tokoo Piaow. Silakan masuk menggunakan akun Google Anda.</p>
+          
+          {loginError && (
+            <div className="mb-6 p-4 bg-rose-50 border border-rose-100 rounded-2xl text-rose-600 text-xs font-medium leading-relaxed">
+              {loginError}
+            </div>
+          )}
+
           <button 
-            onClick={() => loginWithGoogle()}
+            onClick={handleLogin}
             className="w-full bg-primary text-text-main py-4 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-primary-dark transition-all active:scale-95 shadow-lg shadow-primary/20"
           >
             <LogIn size={20} />
