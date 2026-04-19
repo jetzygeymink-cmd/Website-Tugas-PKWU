@@ -28,7 +28,11 @@ export default function SellerDashboard() {
 
     socket.on('new_order', (newOrder: Order) => {
       setOrders(prev => [newOrder, ...prev]);
-      // Play a sound or show notification
+      
+      // Play notification sound
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+      audio.play().catch(e => console.log('Sound blocked by browser interaction policy'));
+
       if (Notification.permission === "granted") {
         new Notification("Pesanan Baru!", {
           body: `${newOrder.customerName} memesan ${newOrder.items.length} item.`,

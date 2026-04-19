@@ -235,7 +235,7 @@ export default function App() {
               disabled={isSubmitting || cart.length === 0}
               className="w-full bg-primary text-text-main py-4 rounded-xl font-bold mt-4 hover:bg-primary-dark transition-all active:scale-[0.98] disabled:opacity-50 disabled:grayscale"
             >
-              {isSubmitting ? "Mengirim..." : (cart.length === 0 ? "Pilih Menu Terlebih Dahulu" : "Kirim Pesanan Sekarang")}
+              {isSubmitting ? "Mengirim..." : (cart.length === 0 ? "Pilih Menu Terlebih Dahulu" : "Pesan Sekarang")}
             </button>
           </form>
         </aside>
