@@ -360,7 +360,7 @@ export default function App() {
               <div className="bg-[#E3FCEF] w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
                 <CheckCircle className="text-[#006644] w-10 h-10" />
               </div>
-              <h2 className="text-2xl font-bold mb-2">Terima Kasih!</h2>
+              <h2 className="text-2xl font-bold mb-2">Pesanan Berhasil!</h2>
               <p className="text-text-light text-sm mb-6">Pesanan Anda <span className="text-text-main font-bold">#{orderSuccess.id.toUpperCase()}</span> sedang diproses.</p>
               <div className="flex flex-col gap-2">
                 <a 
