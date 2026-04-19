@@ -4,6 +4,8 @@ import { CartItem, Product, Order } from './types';
 import { formatCurrency, cn } from './lib/utils';
 import { ShoppingCart, ShoppingBag, Plus, Minus, X, Phone, User, Send, ChevronRight, Menu, Soup, Clock, CheckCircle, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { db } from './lib/firebase';
+import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function App() {
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -56,26 +58,26 @@ export default function App() {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          customerName: formData.name,
-          phoneNumber: formData.phone,
-          note: formData.note,
-          items: cart,
-          totalPrice,
-        }),
-      });
+      const orderId = Math.random().toString(36).substring(7);
+      const newOrderData = {
+        id: orderId,
+        customerName: formData.name,
+        phoneNumber: formData.phone,
+        note: formData.note,
+        items: cart,
+        totalPrice,
+        status: 'pending' as const,
+        createdAt: Date.now(),
+      };
 
-      if (response.ok) {
-        const order = await response.json();
-        setOrderSuccess(order);
-        setCart([]);
-        setIsCartOpen(false);
-        setFormData({ name: '', phone: '', note: '' });
-      }
+      await setDoc(doc(db, 'orders', orderId), newOrderData);
+
+      setOrderSuccess(newOrderData);
+      setCart([]);
+      setIsCartOpen(false);
+      setFormData({ name: '', phone: '', note: '' });
     } catch (err) {
+      console.error("Firebase Error:", err);
       alert("Gagal mengirim pesanan. Silakan coba lagi.");
     } finally {
       setIsSubmitting(false);

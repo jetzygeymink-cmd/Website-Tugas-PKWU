@@ -1,0 +1,40 @@
+{
+  "entities": {
+    "Order": {
+      "title": "Order",
+      "description": "A customer order in the Tokoo Piaow system",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "customerName": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "totalPrice": { "type": "number" },
+        "status": { 
+          "type": "string",
+          "enum": ["pending", "preparing", "completed", "cancelled"]
+        },
+        "note": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "price": { "type": "number" },
+              "quantity": { "type": "number" }
+            }
+          }
+        }
+      },
+      "required": ["id", "customerName", "phoneNumber", "totalPrice", "status", "createdAt", "items"]
+    }
+  },
+  "firestore": {
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Collection of customer orders"
+    }
+  }
+}

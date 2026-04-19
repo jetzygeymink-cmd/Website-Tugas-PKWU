@@ -1,61 +1,62 @@
 import React, { useState, useEffect } from 'react';
-import { io, Socket } from 'socket.io-client';
 import { Order } from './types';
 import { formatCurrency, cn } from './lib/utils';
-import { ShoppingBag, CheckCircle, Clock, XCircle, ChevronRight, MessageCircle } from 'lucide-react';
+import { ShoppingBag, CheckCircle, Clock, XCircle, ChevronRight, MessageCircle, LogIn, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { db, auth, loginWithGoogle } from './lib/firebase';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { onAuthStateChanged, User } from 'firebase/auth';
 
 export default function SellerDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const res = await fetch('/api/orders');
-        const data = await res.json();
-        setOrders(data);
-      } catch (err) {
-        console.error("Failed to fetch orders:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOrders();
-
-    const socket: Socket = io();
-
-    socket.on('new_order', (newOrder: Order) => {
-      setOrders(prev => [newOrder, ...prev]);
-      
-      // Play notification sound
-      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-      audio.play().catch(e => console.log('Sound blocked by browser interaction policy'));
-
-      if (Notification.permission === "granted") {
-        new Notification("Pesanan Baru!", {
-          body: `${newOrder.customerName} memesan ${newOrder.items.length} item.`,
-        });
-      }
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setAuthLoading(false);
     });
 
-    socket.on('order_updated', (updatedOrder: Order) => {
-      setOrders(prev => prev.map(o => o.id === updatedOrder.id ? updatedOrder : o));
-    });
-
-    return () => {
-      socket.disconnect();
-    };
+    return () => unsubscribeAuth();
   }, []);
 
-  const updateStatus = async (id: string, status: Order['status']) => {
-    try {
-      await fetch(`/api/orders/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
+  useEffect(() => {
+    if (!user) return;
+
+    const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const newOrders: Order[] = [];
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'added') {
+          // Play notification sound for new records only after initial load
+          if (!loading) {
+            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+            audio.play().catch(e => console.log('Sound blocked'));
+          }
+        }
       });
+
+      snapshot.forEach((doc) => {
+        newOrders.push({ ...doc.data() } as Order);
+      });
+      
+      setOrders(newOrders);
+      setLoading(false);
+    }, (error) => {
+      console.error("Firestore error:", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user, loading]);
+
+  const handleUpdateStatus = async (id: string, status: Order['status']) => {
+    try {
+      const orderRef = doc(db, 'orders', id);
+      await updateDoc(orderRef, { status });
     } catch (err) {
       console.error("Failed to update order status:", err);
     }
@@ -79,13 +80,55 @@ export default function SellerDashboard() {
     }
   };
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-bg-app flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-bg-app flex items-center justify-center p-6">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-card p-10 rounded-[2.5rem] border border-border-main shadow-xl max-w-md w-full text-center"
+        >
+          <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-8">
+            <Lock className="w-10 h-10 text-primary" />
+          </div>
+          <h1 className="text-3xl font-extrabold mb-3">Akses Terbatas</h1>
+          <p className="text-text-light mb-8 font-medium">Khusus untuk pemilik Tokoo Piaow. Silakan masuk menggunakan akun Google Anda.</p>
+          <button 
+            onClick={() => loginWithGoogle()}
+            className="w-full bg-primary text-text-main py-4 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-primary-dark transition-all active:scale-95 shadow-lg shadow-primary/20"
+          >
+            <LogIn size={20} />
+            Masuk dengan Google
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-bg-app p-6 md:p-10 font-sans text-text-main">
       <div className="max-w-6xl mx-auto">
         <header className="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight">Panel Pesanan</h1>
-            <p className="text-text-light font-medium mt-1">Status dapur Anda saat ini secara langsung.</p>
+          <div className="flex items-center gap-6">
+             <div className="w-14 h-14 bg-primary rounded-2xl overflow-hidden border-2 border-white shadow-md order-2 md:order-1">
+               {user.photoURL ? (
+                 <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover" />
+               ) : (
+                 <div className="w-full h-full flex items-center justify-center font-bold text-xl">{user.displayName?.charAt(0)}</div>
+               )}
+             </div>
+             <div className="order-1 md:order-2">
+                <h1 className="text-3xl font-extrabold tracking-tight">Halo, {user.displayName?.split(' ')[0]}!</h1>
+                <p className="text-text-light font-medium mt-1">Pantau pesanan Tokoo Piaow secara real-time.</p>
+             </div>
           </div>
           <div className="flex items-center gap-3 bg-card px-4 py-2 rounded-xl border border-border-main shadow-sm">
             <div className="w-2.5 h-2.5 bg-[#006644] rounded-full animate-pulse" />
@@ -163,7 +206,7 @@ export default function SellerDashboard() {
                   <div className="p-6 bg-[#F9FAFB] border-t border-border-main flex gap-2 mt-auto">
                     {order.status === 'pending' && (
                       <button
-                        onClick={() => updateStatus(order.id, 'preparing')}
+                        onClick={() => handleUpdateStatus(order.id, 'preparing')}
                         className="flex-1 bg-primary text-text-main rounded-xl py-3 text-xs font-bold hover:bg-primary-dark transition-all flex items-center justify-center gap-2"
                       >
                         <Clock size={16} />
@@ -172,7 +215,7 @@ export default function SellerDashboard() {
                     )}
                     {(order.status === 'pending' || order.status === 'preparing') && (
                       <button
-                        onClick={() => updateStatus(order.id, 'completed')}
+                        onClick={() => handleUpdateStatus(order.id, 'completed')}
                         className="flex-1 bg-[#E3FCEF] text-[#006644] rounded-xl py-3 text-xs font-bold hover:bg-[#B2F5D0] transition-all flex items-center justify-center gap-2"
                       >
                         <CheckCircle size={16} />
@@ -181,7 +224,7 @@ export default function SellerDashboard() {
                     )}
                     {order.status !== 'cancelled' && order.status !== 'completed' && (
                       <button
-                        onClick={() => updateStatus(order.id, 'cancelled')}
+                        onClick={() => handleUpdateStatus(order.id, 'cancelled')}
                         className="p-3 bg-white text-text-light rounded-xl hover:text-rose-600 border border-border-main transition-all"
                       >
                         <XCircle size={18} />
