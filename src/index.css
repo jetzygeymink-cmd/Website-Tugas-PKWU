@@ -1,0 +1,14 @@
+@theme {
+  --font-sans: "Helvetica Neue", Arial, sans-serif;
+  
+  --color-primary: #FFD200;
+  --color-primary-dark: #E6BD00;
+  --color-bg-app: #F8F9FA;
+  --color-card: #FFFFFF;
+  --color-text-main: #2D3436;
+  --color-text-light: #636E72;
+  --color-border-main: #DFE6E9;
+}
+
+@import "tailwindcss";
+
