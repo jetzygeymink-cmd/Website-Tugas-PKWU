@@ -15,6 +15,6 @@ export const PRODUCTS: Product[] = [
     description: "Brownies Cup, pilihan camilan kekinian yang memadukan kelezatan brownies dengan kepraktisan penyajian dalam wadah individual. Produk ini dirancang bagi Anda yang menginginkan cara praktis dan higienis untuk menikmati kudapan cokelat premium kapan saja dan di mana saja.",
     price: 5000,
     category: "Produk Kami",
-    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQtxE83RbPK8LK4gr9Mkaeg8ngIR9F_w2iH3T4Qo6c72JevY7tbggMiMdM&s=10"
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR40N3wlb4grsNlpJVtwNaeB186r0FL-RrUrBt6dYg1QkOEiIHq0g8gjtM&s=10"
   }
 ];
